@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 import os
+import time
 
 
 class Graph:
 
-    def __int__(self, vx, vy, seed_path=None):
+    def __init__(self, vx, vy, seed_path=None):
         self.n = len(vx)
 
         if seed_path is None:
@@ -16,30 +17,29 @@ class Graph:
         self.x = vx
         self.y = vy
 
-        self.cost = self.fitness
-
         self.prime = sieve(self.n)
+        self._fitness = self.calc_fitness()
 
-    def fitness(self):
-        _from = np.roll(self.path, -np.argmin(self.path))
-        _to = np.roll(self.path, -np.argmin(self.path) - 1)
-        return np.sum(
-            np.sqrt(
-                np.power(self.x[_from] - self.x[_to], 2) + np.power(self.y[_from] - self.y[_to], 2)
-                )
-            )
+    def get_fitness(self):
+        print("Getting Fitness Value")
+        return self._fitness
 
-    def prime_fitness(self):
-        _from = np.roll(self.path, -np.argmin(self.path))
-        _to = np.roll(self.path, -np.argmin(self.path) - 1)
+    def calc_fitness(self):
+        _z = -np.argmin(self.path)
+
         _penalty = (np.clip(np.mod(np.arange(self.n), 9), 0, 1) ^ 1) * (self.prime[self.path])
-        _penalty[0] = 0
-        _penalty = np.clip(_penalty + 1.1, 1.0, 1.1)
-        return np.sum(
+        _penalty[0] = _penalty[1] = 0
+        _penalty = np.clip(_penalty + 1.0, 1.0, 1.1)
+        self._fitness = np.sum(
             np.sqrt(
-                _penalty * (np.power(self.x[_from] - self.x[_to], 2) + np.power(self.y[_from] - self.y[_to], 2))
+                _penalty
+                * (
+                        np.power(self.x[np.roll(self.path, _z)] - self.x[np.roll(self.path, _z - 1)], 2)
+                        + np.power(self.y[np.roll(self.path, _z)] - self.y[np.roll(self.path, _z - 1)], 2)
                 )
             )
+        )
+        return self._fitness
 
 
 def sieve(n):
@@ -53,4 +53,9 @@ def sieve(n):
     return flags ^ 1
 
 
-sieve(100)
+if __name__ == '__main__':
+    raw = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'cities.csv'))
+    _t0 = time.time()
+    tsp = Graph(raw['X'].values, raw['Y'].values)
+    _t1 = time.time()
+    print(_t1 - _t0)
