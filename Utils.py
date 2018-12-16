@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import time
 
 
 class Graph:
@@ -24,7 +25,6 @@ class Graph:
         return self._fitness
 
     def calc_fitness(self):
-        print('Calculating Fitness Value...')
         _z = -np.argmin(self.path)
 
         _penalty = (np.clip(np.mod(np.arange(self.n), 9), 0, 1) ^ 1) * (self.prime[self.path])
@@ -55,4 +55,7 @@ def sieve(n):
 
 if __name__ == '__main__':
     raw = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'cities.csv'))
+    _t0 = time.time()
     tsp = Graph(raw['X'].values, raw['Y'].values)
+    _t1 = time.time()
+    print(_t1 - _t0)
