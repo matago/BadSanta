@@ -5,7 +5,6 @@ import time
 
 
 class Graph:
-
     def __init__(self, vx, vy, seed_path=None):
         self.n = len(vx)
 
@@ -40,7 +39,11 @@ class Graph:
             )
         )
         return self._fitness
-
+    def Submit_File(self,file,msg='',upload=False):
+        pd.DataFrame({'Path':self.path}).to_csv(file,index=False)
+        if upload:
+            command = f'kaggle competitions submit -c traveling-santa-2018-prime-paths -f {file} -m "{msg}"'
+            os.system(command)
 
 def sieve(n):
     flags = np.ones(n, dtype=int)
@@ -59,3 +62,5 @@ if __name__ == '__main__':
     tsp = Graph(raw['X'].values, raw['Y'].values)
     _t1 = time.time()
     print(_t1 - _t0)
+    print(tsp._fitness)
+    tsp.Submit_File(os.path.join(os.getcwd(),'Sub.csv'),msg='Test Matts Fitness',upload=True)
