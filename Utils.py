@@ -2,16 +2,15 @@ import numpy as np
 import pandas as pd
 import os
 import time
-import kaggle
 
 class Graph:
     def __init__(self, vx, vy, seed_path=None):
         self.n = len(vx)
-        self.bitpen = (np.mod(np.arange(1, self.n + 1), 10) == 0) * 1
-
+        self.bitpen = (np.mod(np.arange(1, self.n+1), 10) == 0) * 1
+        print(self.bitpen[0:21])
         # Set permutation to include cities 1:n, exclusive of Zero
         if seed_path is None:
-            self.path = np.random.permutation(self.n - 1) + 1
+            self.path = np.random.permutation(self.n-1) + 1
         else:
             self.path = seed_path
 
@@ -19,10 +18,12 @@ class Graph:
         self.y = vy
 
         self.prime = sieve(self.n)
+        print(self.prime[0:21])
         self.fitness = self.calc_fitness()
 
     def calc_fitness(self):
-        _penalty = np.clip((self.bitpen * self.prime[np.concatenate(([0], self.path))]) + 1, 1.0, 1.1)
+        _penalty = np.clip((self.bitpen * self.prime[np.concatenate(([0], self.path))] + 1), 1.0, 1.1)
+        print(_penalty[0:21])
         _fitness = np.sum(
             np.sqrt(
                 _penalty
