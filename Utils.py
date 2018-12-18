@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
-import os
-import time
-import kaggle
+import os, time
+from bokeh.plotting import figure, output_file, show
 
 
 class Graph:
