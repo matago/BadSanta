@@ -12,7 +12,7 @@ class Graph:
 
         # Set permutation to include cities 1:n, exclusive of Zero
         if seed_path is None:
-            self.path = np.random.permutation(self.n - 1) + 1
+            self.path = np.concatenate(([0], np.random.permutation(self.n - 1) + 1, [0]))
         else:
             self.path = seed_path
 
