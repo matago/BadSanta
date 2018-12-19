@@ -8,40 +8,34 @@ class Graph:
     def __init__(self, vx, vy, seed_path=None):
         self.n = len(vx)
 
-        self.bitpen = (np.mod(np.arange(1, self.n + 1), 10) == 0) * 1
+        self.bitpen = (np.mod(np.arange(1, self.n+1), 10) == 0) * 1
 
         # Set permutation to include cities 1:n, exclusive of Zero
         if seed_path is None:
-            self.path = np.random.permutation(self.n - 1) + 1
+            self.path = np.concatenate(([0], np.random.permutation(self.n - 1) + 1, [0]))
         else:
             self.path = seed_path
 
         self.x = vx
         self.y = vy
 
-        self.prime = primesfrom2to(self.n + 2)
+        self.prime = np.isin(np.arange(self.n), primesfrom2to(self.n + 1), invert=True)
 
         self.fitness = self.calc_fitness()
 
     def calc_fitness(self):
-        _penalty = np.clip(self.bitpen * np.isin(np.concatenate(([0], self.path)), self.prime, invert=True) * 2, 1, 1.1)
+        _penalty = np.clip(self.bitpen * self.prime[self.path[:-1]] * 2, 1, 1.1)
 
-        _fitness = np.sum( _penalty * np.sqrt(
-                        np.power(
-                            self.x[np.concatenate(([0], self.path))] -
-                            self.x[np.concatenate((self.path, [0]))]
-                            , 2)
-
-                        + np.power(
-                            self.y[np.concatenate(([0], self.path))] -
-                            self.y[np.concatenate((self.path, [0]))], 2)
-                )
-            )
+        _fitness = np.sum(_penalty *
+                          np.sqrt(
+                                np.power(self.x[self.path[:-1]] - self.x[self.path[1:]], 2)
+                                + np.power(self.y[self.path[:-1]] - self.y[self.path[1:]], 2)
+                                ))
         return _fitness
 
     def Submit_File(self, file, msg='', upload=False):
         # Prepended 0 to the end on the path
-        pd.DataFrame({'Path': np.concatenate(([0], self.path, [0]))}).to_csv(file, index=False)
+        pd.DataFrame({'Path': self.path}).to_csv(file, index=False)
         if upload:
             command = f"kaggle competitions submit -c traveling-santa-2018-prime-paths -f {file} -m \"{msg}\""
             os.system(command)
@@ -69,11 +63,8 @@ def primesfrom2to(n):
 if __name__ == '__main__':
     raw = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'cities.csv'))
     pth = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'sample_submission.csv'))
-    pth = pth['Path'][1:-1].values
-    print(pth)
-    _t0 = time.time()
+    pth = pth['Path'].values
     tsp = Graph(raw['X'].values, raw['Y'].values, pth)
-    _t1 = time.time()
-    print(_t1 - _t0)
     print(tsp.fitness)
-    tsp.Submit_File(os.path.join(os.getcwd(), 'Data','sample_submission.csv'), msg='Test Matts Fitness', upload=False)
+    os.system('which kaggle')
+    tsp.Submit_File(os.path.join(os.getcwd(), 'Data', 'out.csv'), msg='Test Matts Fitness', upload=False)
