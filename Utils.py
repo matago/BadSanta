@@ -24,7 +24,9 @@ class Graph:
         self.fitness = self.calc_fitness()
 
     def calc_fitness(self):
-        _penalty = np.clip(self.bitpen * np.isin(np.concatenate(([0], self.path)), self.prime, invert=True) * 2, 1, 1.1)
+        _penalty = np.clip(self.bitpen *
+                           np.isin(np.concatenate(
+                               ([0], self.path)), self.prime, invert=True) * 2, 1, 1.1)
 
         _fitness = np.sum( _penalty * np.sqrt(
                         np.power(
@@ -47,10 +49,11 @@ class Graph:
             os.system(command)
 
     def tour_plot(self):
+        self.path = np.concatenate([[0],self.path,[0]])
         output_file("line.html")
         p = figure(plot_width=1000, plot_height=1000)
-        p.line(self.x, self.y, line_width=.05)
-        p.circle(self.x[self.prime == 0], self.y[self.prime == 0], size=3, color='black')
+        p.line(self.x[self.path], self.y[self.path], line_width=3)
+        p.circle(self.x[self.path], self.y[self.path], size=8, color='black')
         show(p)
 
 
