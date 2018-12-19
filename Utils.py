@@ -41,10 +41,11 @@ class Graph:
             os.system(command)
 
     def tour_plot(self):
+        self.path = np.concatenate([[0],self.path,[0]])
         output_file("line.html")
         p = figure(plot_width=1000, plot_height=1000)
-        p.line(self.x, self.y, line_width=.05)
-        p.circle(self.x[self.prime == 0], self.y[self.prime == 0], size=3, color='black')
+        p.line(self.x[self.path], self.y[self.path], line_width=3)
+        p.circle(self.x[self.path], self.y[self.path], size=8, color='black')
         show(p)
 
 
