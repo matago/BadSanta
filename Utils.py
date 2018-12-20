@@ -3,8 +3,7 @@ import pandas as pd
 import os, time
 from bokeh.plotting import figure, output_file, show
 
-
-class Graph:
+class Graph(object):
     def __init__(self, vx, vy, seed_path=None):
         self.n = len(vx)
 
@@ -41,13 +40,12 @@ class Graph:
             os.system(command)
 
     def tour_plot(self):
-        self.path = np.concatenate([[0],self.path,[0]])
+        # self.path = np.concatenate([[0],self.path,[0]])
         output_file("line.html")
         p = figure(plot_width=1000, plot_height=1000)
         p.line(self.x[self.path], self.y[self.path], line_width=3)
         p.circle(self.x[self.path], self.y[self.path], size=8, color='black')
         show(p)
-
 
 def primesfrom2to(n):
     """ Input n>=6, Returns a array of primes, 2 <= p < n """
@@ -65,7 +63,9 @@ if __name__ == '__main__':
     raw = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'cities.csv'))
     pth = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'sample_submission.csv'))
     pth = pth['Path'].values
+    s = time.time()
     tsp = Graph(raw['X'].values, raw['Y'].values, pth)
-    print(tsp.fitness)
-    os.system('which kaggle')
-    tsp.Submit_File(os.path.join(os.getcwd(), 'Data', 'out.csv'), msg='Test Matts Fitness', upload=False)
+    f = time.time()
+    print(time.time()-s)
+    # os.system('which kaggle')
+    # tsp.Submit_File(os.path.join(os.getcwd(), 'Data', 'out.csv'), msg='Test Matts Fitness', upload=False)
