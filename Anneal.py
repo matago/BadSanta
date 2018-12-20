@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 from time import time
+from tqdm import tqdm
 np.random.seed(50)
 
 
@@ -16,23 +17,35 @@ class anneal(Graph):
             self.path = np.insert(self.path[self.path!=self.path[locs[1]]]
                                   ,locs[0],self.path[locs[1]])
 
-    def cool(self,alpha=0.95,T=1,Tmin=0.0001):
-        oldS = self.fitness
+    def length(self):
+        x = 0
+        t = 1
+        while t > 0.0001:
+            t*=.95
+            x+=1
+        return x
+
+    def cool(self,alpha=0.95,T=1,Tmin=0.0001,iters=100):
+        oldS,original = self.fitness,self.fitness
         oldP = self.path.copy()
         stop,end = 0,0
+        pbar = tqdm(total=self.length(),desc=f'Cooling at {int(oldS):,}')
         while T > Tmin:
-            for i in range(100*self.n):
+            for i in tqdm(range(iters)):
                 self.mutation()
                 newS = self.calc_fitness()
                 if np.exp((oldS-newS)/T) > np.random.rand():
                     stop += newS == oldS
                     oldS = newS
                     oldP = self.path.copy()
+                    # tqdm.write(str(round(oldS,0)))
                 else:
                     stop += 1
                     self.path = oldP.copy()
             T *= alpha
-            print(T,end)
+            pbar.update()
+            pbar.set_description(f'Cooling at {int(oldS):,}, Savings = {int(original-oldS):,}')
+            # print(T,end)
         self.path = oldP
         return oldS
 

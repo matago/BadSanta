@@ -43,8 +43,7 @@ class Graph(object):
         # self.path = np.concatenate([[0],self.path,[0]])
         output_file("line.html")
         p = figure(plot_width=1000, plot_height=1000)
-        p.line(self.x[self.path], self.y[self.path], line_width=3)
-        p.circle(self.x[self.path], self.y[self.path], size=8, color='black')
+        p.line(self.x[self.path], self.y[self.path], line_width=.5)
         show(p)
 
 def primesfrom2to(n):
