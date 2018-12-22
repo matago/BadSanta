@@ -6,8 +6,8 @@ from time import time
 
 print(os.getcwd())
 
-it = input('How Many Iterations should i run? (must be an int!)')
-raw = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'cities.csv'))
+it = input('How Many Iterations should i run? (must be an int!)\n')
+raw = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'cities.csv')).head(1000)
 
 
 a = anneal(raw['X'].values, raw['Y'].values)
@@ -31,7 +31,14 @@ a = anneal(raw['X'].values, raw['Y'].values)
 
 o = float(a.fitness)
 st = time()
-r = a.cool(iters=int(it))
+
+try:
+    r = a.cool(iters=int(it))
+except KeyboardInterrupt:
+    pass
+
+
+
 print(time()-st)
 print(f'Original Fitness = {o}')
 print(f'New Fitness = {a.calc_fitness()}')

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os, time
 from bokeh.plotting import figure, output_file, show
+import numexpr as ne
 
 class Graph(object):
     def __init__(self, vx, vy, seed_path=None):
@@ -25,12 +26,16 @@ class Graph(object):
     def calc_fitness(self):
         _penalty = np.clip(self.bitpen * self.prime[self.path[:-1]] * 2, 1, 1.1)
 
-        _fitness = np.sum(_penalty *
-                          np.sqrt(
-                                np.power(self.x[self.path[:-1]] - self.x[self.path[1:]], 2)
-                                + np.power(self.y[self.path[:-1]] - self.y[self.path[1:]], 2)
-                                ))
-        return _fitness
+        x1,x2 = self.x[self.path[:-1]], self.x[self.path[1:]]
+        y1,y2 = self.y[self.path[:-1]], self.y[self.path[1:]]
+        _fitness = ne.evaluate("(_penalty*sqrt((x2-x1)**2+(y2-y1)**2))")
+        print(_fitness.sum())
+        # _fitness = np.sum(_penalty *
+        #                   np.sqrt(
+        #                         np.power(self.x[self.path[:-1]] - self.x[self.path[1:]], 2)
+        #                         + np.power(self.y[self.path[:-1]] - self.y[self.path[1:]], 2)
+        #                         ))
+        return _fitness.sum()
 
     def Submit_File(self, file, msg='', upload=False):
         # Prepended 0 to the end on the path

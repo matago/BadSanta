@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 import os
 import sys
-from time import time
+from time import time,sleep
 from tqdm import tqdm
 np.random.seed(50)
-
+import numexpr as ne
 
 
 class anneal(Graph):
@@ -14,7 +14,7 @@ class anneal(Graph):
         points = np.sort(np.random.randint(1, self.path.shape[0] - 1, (2)))
         self.start,self.stop = np.sort(points)
         take, put = points
-        if self.T < 0: #np.random.rand():
+        if self.T < np.random.rand():
             if np.random.rand() >= 0.5:
                 cur = self.path[self.start-1:self.stop+1].copy()
                 self.path[self.start:self.stop] = np.flip(self.path[self.start:self.stop],0)
@@ -45,16 +45,21 @@ class anneal(Graph):
 
     def subTour(self,tour,off,normal):
         if normal:
+            # _fitness = ne.evaluate("sum(sqrt((x2-x1)**2+(y2-y1)**2))")
             _fitness = np.sqrt(np.power(self.x[tour[:-1]] - self.x[tour[1:]], 2)
                                   + np.power(self.y[tour[:-1]] - self.y[tour[1:]], 2)).sum()
         else:
+            x1, x2 = self.x[tour[:-1]], self.x[tour[1:]]
+            y1, y2 = self.y[tour[:-1]], self.y[tour[1:]]
             _penalty = np.clip(self.bitpen[self.start-1:self.stop+off] *
                                self.prime[tour[:-1]] * 2, 1, 1.1)
-            _fitness = np.sum(_penalty *
-                          np.sqrt(
-                              np.power(self.x[tour[:-1]] - self.x[tour[1:]], 2)
-                              + np.power(self.y[tour[:-1]] - self.y[tour[1:]], 2)
-                          ))
+            _fitness = ne.evaluate("sum(sqrt(_penalty*((x2-x1)**2+(y2-y1)**2)))")
+
+            # _fitness = np.sum(_penalty *
+            #               np.sqrt(
+            #                   np.power(self.x[tour[:-1]] - self.x[tour[1:]], 2)
+            #                   + np.power(self.y[tour[:-1]] - self.y[tour[1:]], 2)
+            #               ))
         return _fitness
 
     def length(self):
@@ -82,8 +87,10 @@ class anneal(Graph):
             pbar.update()
             newFit = self.calc_fitness()
             pbar.set_description(f'Cooling at {int(newFit):,}, Savings = {int(original-newFit):,}')
-            # print(T,end)
+            # self.tour_plot()
         self.path = oldP
+        # self.tour_plot()
+
         return oldS
 
 if __name__ == '__main__':
