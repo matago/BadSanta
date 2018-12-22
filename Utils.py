@@ -29,7 +29,7 @@ class Graph(object):
         x1,x2 = self.x[self.path[:-1]], self.x[self.path[1:]]
         y1,y2 = self.y[self.path[:-1]], self.y[self.path[1:]]
         _fitness = ne.evaluate("(_penalty*sqrt((x2-x1)**2+(y2-y1)**2))")
-        print(_fitness.sum())
+
         # _fitness = np.sum(_penalty *
         #                   np.sqrt(
         #                         np.power(self.x[self.path[:-1]] - self.x[self.path[1:]], 2)

@@ -3,11 +3,11 @@ import numpy as np
 import os
 from Anneal import anneal
 from time import time
-
+np.random.seed(50)
 print(os.getcwd())
 
 it = input('How Many Iterations should i run? (must be an int!)\n')
-raw = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'cities.csv')).head(1000)
+raw = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'cities.csv'))
 
 
 a = anneal(raw['X'].values, raw['Y'].values)
@@ -22,8 +22,8 @@ a = anneal(raw['X'].values, raw['Y'].values)
 #     ls.append(o-n)
 #     print(o-n)
 #     print(st-a.calc_fitness(),'\n')
-#
-#
+# #
+# #
 # print(tt-sum(ls),pl)
 #
 # a.calc_fitness()

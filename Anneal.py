@@ -12,10 +12,12 @@ import numexpr as ne
 class anneal(Graph):
     def mutation(self):
         points = np.sort(np.random.randint(1, self.path.shape[0] - 1, (2)))
+        while np.abs(np.diff(points)) > self.T*self.n:
+            points = np.sort(np.random.randint(1, self.path.shape[0] - 1, (2)))
         self.start,self.stop = np.sort(points)
         take, put = points
         if self.T < np.random.rand():
-            if np.random.rand() >= 0.5:
+            if np.random.rand() >= 1.0:
                 cur = self.path[self.start-1:self.stop+1].copy()
                 self.path[self.start:self.stop] = np.flip(self.path[self.start:self.stop],0)
                 test = self.path[self.start-1:self.stop+1]
@@ -27,7 +29,7 @@ class anneal(Graph):
                 test = self.path[self.start - 1:self.stop + 2]
                 return self.subTour(cur,1,False), self.subTour(test,1,False)
         else:
-            if np.random.rand() >= 0.5:
+            if np.random.rand() >= 0.0:
                 cur = self.subTour(self.path[self.start-1:self.start+1].copy(), 0, True) + \
                       self.subTour(self.path[self.stop - 1:self.stop + 1].copy(), 0, True)
                 self.path[self.start:self.stop] = np.flip(self.path[self.start:self.stop], 0)
@@ -35,12 +37,12 @@ class anneal(Graph):
                        self.subTour(self.path[self.stop-1:self.stop+1],0,True)
                 return cur,test
             else:
-                cur = self.subTour(self.path[take-2:take+2],0,True) + \
-                      self.subTour(self.path[put - 2:put + 2], 0, True)
+                cur = self.subTour(self.path[take:take +2],0,True) + \
+                      self.subTour(self.path[put-1:put + 2], 0, True)
                 self.path = np.insert(self.path[self.path != self.path[take]]
                                       ,put,self.path[take])
-                test = self.subTour(self.path[take-2:take+2],0,True) + \
-                      self.subTour(self.path[put - 2:put + 2], 0, True)
+                test = self.subTour(self.path[take:take + 2],0,True) + \
+                      self.subTour(self.path[put-1:put + 2], 0, True)
                 return cur,test
 
     def subTour(self,tour,off,normal):
@@ -53,7 +55,7 @@ class anneal(Graph):
             y1, y2 = self.y[tour[:-1]], self.y[tour[1:]]
             _penalty = np.clip(self.bitpen[self.start-1:self.stop+off] *
                                self.prime[tour[:-1]] * 2, 1, 1.1)
-            _fitness = ne.evaluate("sum(sqrt(_penalty*((x2-x1)**2+(y2-y1)**2)))")
+            _fitness = ne.evaluate("sum(_penalty*sqrt(((x2-x1)**2+(y2-y1)**2)))")
 
             # _fitness = np.sum(_penalty *
             #               np.sqrt(
