@@ -7,17 +7,20 @@ from time import time,sleep
 from tqdm import tqdm
 np.random.seed(50)
 import numexpr as ne
+import math as m
 
+from profilehooks import profile
 
 class anneal(Graph):
     def mutation(self):
-        points = np.sort(np.random.randint(1, self.path.shape[0] - 1, (2)))
-        while np.abs(np.diff(points)) > self.T*self.n:
-            points = np.sort(np.random.randint(1, self.path.shape[0] - 1, (2)))
-        self.start,self.stop = np.sort(points)
+        inter = np.random.randint(2,max((int((self.n-1))),3))
+        st = max(np.random.randint((self.n-1) - inter),1)
+        points = [st,st+inter]
+        np.random.shuffle(points)
+        self.start,self.stop = sorted(points)
         take, put = points
-        if self.T < np.random.rand():
-            if np.random.rand() >= 1.0:
+        if self.passes / self.total > np.random.rand():
+            if np.random.rand() >= 0.5:
                 cur = self.path[self.start-1:self.stop+1].copy()
                 self.path[self.start:self.stop] = np.flip(self.path[self.start:self.stop],0)
                 test = self.path[self.start-1:self.stop+1]
@@ -29,7 +32,7 @@ class anneal(Graph):
                 test = self.path[self.start - 1:self.stop + 2]
                 return self.subTour(cur,1,False), self.subTour(test,1,False)
         else:
-            if np.random.rand() >= 0.0:
+            if np.random.rand() >= 0.5:
                 cur = self.subTour(self.path[self.start-1:self.start+1].copy(), 0, True) + \
                       self.subTour(self.path[self.stop - 1:self.stop + 1].copy(), 0, True)
                 self.path[self.start:self.stop] = np.flip(self.path[self.start:self.stop], 0)
@@ -47,7 +50,6 @@ class anneal(Graph):
 
     def subTour(self,tour,off,normal):
         if normal:
-            # _fitness = ne.evaluate("sum(sqrt((x2-x1)**2+(y2-y1)**2))")
             _fitness = np.sqrt(np.power(self.x[tour[:-1]] - self.x[tour[1:]], 2)
                                   + np.power(self.y[tour[:-1]] - self.y[tour[1:]], 2)).sum()
         else:
@@ -56,12 +58,6 @@ class anneal(Graph):
             _penalty = np.clip(self.bitpen[self.start-1:self.stop+off] *
                                self.prime[tour[:-1]] * 2, 1, 1.1)
             _fitness = ne.evaluate("sum(_penalty*sqrt(((x2-x1)**2+(y2-y1)**2)))")
-
-            # _fitness = np.sum(_penalty *
-            #               np.sqrt(
-            #                   np.power(self.x[tour[:-1]] - self.x[tour[1:]], 2)
-            #                   + np.power(self.y[tour[:-1]] - self.y[tour[1:]], 2)
-            #               ))
         return _fitness
 
     def length(self):
@@ -73,10 +69,10 @@ class anneal(Graph):
         return x
 
     def cool(self,alpha=0.95,T=1,Tmin=0.0001,iters=100):
-        self.T = T
+        self.T,self.passes,self.total = T,0,self.length()
         oldSX,original = self.calc_fitness(),self.calc_fitness()
         oldP = self.path.copy()
-        pbar = tqdm(total=self.length(),desc=f'Cooling at {int(oldSX):,}')
+        pbar = tqdm(total=self.total,desc=f'Cooling at {int(oldSX):,}')
         while self.T > Tmin:
             for i in tqdm(range(iters)):
                 oldS,newS = self.mutation()
@@ -88,6 +84,7 @@ class anneal(Graph):
             self.T *= alpha
             pbar.update()
             newFit = self.calc_fitness()
+            self.passes += 1
             pbar.set_description(f'Cooling at {int(newFit):,}, Savings = {int(original-newFit):,}')
             # self.tour_plot()
         self.path = oldP
