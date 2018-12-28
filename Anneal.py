@@ -5,92 +5,154 @@ import os
 import sys
 from time import time,sleep
 from tqdm import tqdm
-np.random.seed(50)
+np.random.seed(5000)
 import numexpr as ne
-import math as m
+
 
 from profilehooks import profile
 
 class anneal(Graph):
-    def mutation(self):
-        inter = np.random.randint(2,max((int((self.n-1))),3))
-        st = max(np.random.randint((self.n-1) - inter),1)
-        points = [st,st+inter]
-        np.random.shuffle(points)
-        self.start,self.stop = sorted(points)
-        take, put = points
-        if self.passes / self.total > np.random.rand():
-            if np.random.rand() >= 0.5:
-                cur = self.path[self.start-1:self.stop+1].copy()
-                self.path[self.start:self.stop] = np.flip(self.path[self.start:self.stop],0)
-                test = self.path[self.start-1:self.stop+1]
-                return self.subTour(cur,0,False), self.subTour(test,0,False)
-            else:
-                cur = self.path[self.start-1:self.stop+2].copy()
-                self.path = np.insert(self.path[self.path != self.path[take]]
-                                      ,put,self.path[take])
-                test = self.path[self.start - 1:self.stop + 2]
-                return self.subTour(cur,1,False), self.subTour(test,1,False)
-        else:
-            if np.random.rand() >= 0.5:
-                cur = self.subTour(self.path[self.start-1:self.start+1].copy(), 0, True) + \
-                      self.subTour(self.path[self.stop - 1:self.stop + 1].copy(), 0, True)
-                self.path[self.start:self.stop] = np.flip(self.path[self.start:self.stop], 0)
-                test = self.subTour(self.path[self.start-1:self.start+1],0,True) + \
-                       self.subTour(self.path[self.stop-1:self.stop+1],0,True)
-                return cur,test
-            else:
-                cur = self.subTour(self.path[take:take +2],0,True) + \
-                      self.subTour(self.path[put-1:put + 2], 0, True)
-                self.path = np.insert(self.path[self.path != self.path[take]]
-                                      ,put,self.path[take])
-                test = self.subTour(self.path[take:take + 2],0,True) + \
-                      self.subTour(self.path[put-1:put + 2], 0, True)
-                return cur,test
+    def randGen(self):
+        star =
+        points = np.random.randint(1,self.n,(2))
+        self.t, self.p = points
+        self.start, self.stop = np.sort(points)
 
-    def subTour(self,tour,off,normal):
-        if normal:
-            _fitness = np.sqrt(np.power(self.x[tour[:-1]] - self.x[tour[1:]], 2)
-                                  + np.power(self.y[tour[:-1]] - self.y[tour[1:]], 2)).sum()
+    def mutation(self):
+        if self.kind == 1:
+            self.path[self.start:self.stop] = self.path[self.start:self.stop][::-1]
         else:
-            x1, x2 = self.x[tour[:-1]], self.x[tour[1:]]
-            y1, y2 = self.y[tour[:-1]], self.y[tour[1:]]
-            _penalty = np.clip(self.bitpen[self.start-1:self.stop+off] *
-                               self.prime[tour[:-1]] * 2, 1, 1.1)
-            _fitness = ne.evaluate("sum(_penalty*sqrt(((x2-x1)**2+(y2-y1)**2)))")
-        return _fitness
+            if self.t >= self.p:
+                self.path[self.p:self.t + 1] = np.roll(self.path[self.p:self.t + 1], 1)
+            else:
+                self.path[self.t:self.p + 1] = np.roll(self.path[self.t:self.p + 1], -1)
+
+    # @profile
+    def trial(self):
+        self.randGen()
+        choose = self.T >= np.random.rand()
+        if np.random.rand() >= .5:
+            if self.start != self.stop:
+                self.one,self.two = [self.start-1,self.stop-1,self.start-1,self.start], \
+                                    [self.start,self.stop,self.stop-1,self.stop]
+                if choose != True:
+                    self.step = np.array([self.start,self.stop,self.start,self.stop])
+                    # print(self.one)
+                    # print(self.two)
+                    # print(self.step)
+                    # print(self.path)
+                    static = self.bitpen[self.start:self.stop-1] == 1
+                    # print(static)
+                    self.a = self.path[self.start:self.stop][:-1][static]
+                    self.b = self.path[self.start:self.stop][1:][static]
+                    # print(self.a)
+                    # print(self.b)
+
+                    self.c = self.path[self.start:self.stop][1:][::-1][static]
+                    self.d = self.path[self.start:self.stop][:-1][::-1][static]
+                    # print(self.c)
+                    # print(self.d)
+
+                self.kind = 1
+                self.subTour(choose)
+            else:
+                self.kind = 1
+                self.delta = 0.0
+        else:
+            if self.t > self.p:
+                self.one = [self.t - 1, self.t, self.p - 1] + [self.p - 1, self.t, self.t - 1]
+                self.two = [self.t, self.t + 1, self.p] + [self.t, self.p, self.t + 1]
+                if choose != True:
+                    self.step = np.array([self.t,self.t+1,self.p] + [self.p,self.p+1,self.t+1])
+
+                    static = self.bitpen[self.p:self.t] == 1
+
+                    self.c = self.path[self.p-1:self.t][:-1][static][(self.p + 1) % 10 == 0:]
+                    self.d = self.path[self.p-1:self.t][1:][static][(self.p + 1) % 10 == 0:]
+
+                    static[-1:] = False
+
+                    self.a = self.path[self.p:self.t + 1][:-1][static]
+                    self.b = self.path[self.p:self.t + 1][1:][static]
+
+                self.kind = 2
+                self.subTour(choose)
+            elif self.t == self.p:
+                self.delta = 0
+                self.kind = 2
+            else:
+                self.one = [self.t - 1, self.t, self.p] + [self.t - 1, self.p, self.t]
+                self.two = [self.t, self.t + 1, self.p + 1] + [self.t + 1, self.t, self.p + 1]
+                if choose != True:
+                    self.step = np.array([self.t, self.t + 1, self.p+1] + [self.t, self.p, self.p + 1])
+
+                    static = self.bitpen[self.t:self.p] == 1
+
+                    self.a = self.path[self.t:self.p+1][:-1][static][(self.t+1)%10==0:]
+                    self.b = self.path[self.t:self.p+1][1:][static][(self.t+1)%10==0:]
+
+                    static[-1:] = False
+
+                    self.c = self.path[self.t + 1:self.p+2][:-1][static]
+                    self.d = self.path[self.t + 1:self.p+2][1:][static]
+
+                self.kind = 2
+                self.subTour(choose)
+
+    def subTour(self,normal):
+        _fitness = np.power(self.x[self.path[self.one]] - \
+                                   self.x[self.path[self.two]], 2) +\
+                           np.power(self.y[self.path[self.one]] - \
+                                    self.y[self.path[self.two]], 2)
+        if normal:
+            _fitness = np.sqrt(_fitness)
+            self.delta = _fitness[:int(len(_fitness)/2)].sum() - _fitness[int(len(_fitness)/2):].sum()
+        else:
+            _penalty = np.clip((self.step % 10 == 0) *
+                               self.prime[self.path[self.one]] * 2, 1, 1.1)
+            _fitness = np.sqrt(_fitness) * _penalty
+
+            # _p1 = np.sqrt(np.power(self.x[self.a] - self.x[self.b],2) +
+            #                        np.power(self.y[self.a] - self.y[self.b],2)) * \
+            #       self.prime[self.a]*.1
+            x1,x2 = self.x[self.a], self.x[self.b]
+            y1,y2 = self.y[self.a], self.y[self.b]
+            pen = self.prime[self.a]*.1
+            _p1 = ne.evaluate('pen*sqrt((x1-x2)**2+(y1-y2)**2)')
+            # _p2 = np.sqrt(np.power(self.x[self.c] - self.x[self.d], 2) +
+            #                        np.power(self.y[self.c] - self.y[self.d], 2)) * \
+            #       self.prime[self.c]*.1
+            x1, x2 = self.x[self.c], self.x[self.d]
+            y1, y2 = self.y[self.c], self.y[self.d]
+            pen = self.prime[self.c] * .1
+
+            _p2 = ne.evaluate('pen*sqrt((x1-x2)**2+(y1-y2)**2)')
+
+            self.delta = _fitness[:int(len(_fitness) / 2)].sum() + _p1.sum() - \
+                         _fitness[int(len(_fitness) / 2):].sum() - _p2.sum()
 
     def length(self):
         x = 0
-        t = 1
+        t = self.T
         while t > 0.0001:
-            t*=.95
-            x+=1
+            t *= .95
+            x += 1
         return x
 
     def cool(self,alpha=0.95,T=1,Tmin=0.0001,iters=100):
-        self.T,self.passes,self.total = T,0,self.length()
-        oldSX,original = self.calc_fitness(),self.calc_fitness()
-        oldP = self.path.copy()
-        pbar = tqdm(total=self.total,desc=f'Cooling at {int(oldSX):,}')
+        self.T = T
+        self.total = self.length()
+        original = self.calc_fitness()
+        pbar = tqdm(total=self.total,desc=f'Cooling at {int(original):,}')
         while self.T > Tmin:
             for i in tqdm(range(iters)):
-                oldS,newS = self.mutation()
-                if np.exp((oldS-newS)/self.T) > np.random.rand():
-                    oldP = self.path.copy()
-                    oldSX -= (oldS-newS)
-                else:
-                    self.path = oldP.copy()
+                self.trial()
+                if np.exp((self.delta)/self.T) > np.random.rand() and self.delta != 0:
+                    self.mutation()
             self.T *= alpha
             pbar.update()
             newFit = self.calc_fitness()
-            self.passes += 1
             pbar.set_description(f'Cooling at {int(newFit):,}, Savings = {int(original-newFit):,}')
-            # self.tour_plot()
-        self.path = oldP
-        # self.tour_plot()
-
-        return oldS
 
 if __name__ == '__main__':
     samples = 50

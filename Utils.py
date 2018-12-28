@@ -30,11 +30,7 @@ class Graph(object):
         y1,y2 = self.y[self.path[:-1]], self.y[self.path[1:]]
         _fitness = ne.evaluate("(_penalty*sqrt((x2-x1)**2+(y2-y1)**2))")
 
-        # _fitness = np.sum(_penalty *
-        #                   np.sqrt(
-        #                         np.power(self.x[self.path[:-1]] - self.x[self.path[1:]], 2)
-        #                         + np.power(self.y[self.path[:-1]] - self.y[self.path[1:]], 2)
-        #                         ))
+
         return _fitness.sum()
 
     def Submit_File(self, file, msg='', upload=False):
@@ -68,8 +64,10 @@ if __name__ == '__main__':
     pth = pd.read_csv(os.path.join(os.getcwd(), 'Data', 'sample_submission.csv'))
     pth = pth['Path'].values
     s = time.time()
-    tsp = Graph(raw['X'].values, raw['Y'].values, pth)
+    tsp = Graph(raw['X'].values, raw['Y'].values)
     f = time.time()
     print(time.time()-s)
+    print(tsp.bitpen.sum())
+
     # os.system('which kaggle')
     # tsp.Submit_File(os.path.join(os.getcwd(), 'Data', 'out.csv'), msg='Test Matts Fitness', upload=False)
